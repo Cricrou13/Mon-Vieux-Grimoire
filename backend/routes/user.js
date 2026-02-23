@@ -5,5 +5,6 @@ const userCtrl = require("../controllers/user");
 
 // La route demandée par le frontend pour l'inscription
 router.post("/signup", userCtrl.signup);
+router.post("/login", userCtrl.login);
 
 module.exports = router;
