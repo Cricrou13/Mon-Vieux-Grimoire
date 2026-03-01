@@ -1,8 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const path = require("path");
 const userRoutes = require("./routes/user");
 require("dotenv").config();
-
 const bookRoutes = require("./routes/books");
 
 const app = express();
@@ -30,7 +30,11 @@ app.use((req, res, next) => {
 // Middleware pour parser le JSON des requêtes
 app.use(express.json());
 
+app.use("/api/books", bookRoutes);
+
 app.use("/api/auth", userRoutes);
+
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 // Routes
 app.use("/api/books", bookRoutes);
