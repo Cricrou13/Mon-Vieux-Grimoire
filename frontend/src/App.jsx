@@ -9,7 +9,7 @@ import { APP_ROUTES } from "./utils/constants";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import AddBook from "./pages/AddBook/AddBook";
-import UpdateBook from "./pages/updateBook/UpdateBook";
+import UpdateBook from "./pages/UpdateBook/UpdateBook";
 import { useUser } from "./lib/customHooks";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
