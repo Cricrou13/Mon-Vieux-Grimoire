@@ -11,10 +11,15 @@ exports.getAllBooks = (req, res) => {
 
 // Récupérer un livre précis (pour la page de détails)
 
-exports.getOneBook = (req, res) => {
+exports.getOneBook = (req, res, next) => {
   Book.findOne({ _id: req.params.id })
-    .then((books) => res.status(200).json(books))
-    .catch((error) => res.status(400).json({ error }));
+    .then(book => {
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé !' });
+      }
+      res.status(200).json(book);
+    })
+    .catch(error => res.status(404).json({ error }));
 };
 
 // Récupérer les 3 livres les mieux notés (exigé par le front)
@@ -68,4 +73,47 @@ exports.deleteBook = (req, res) => {
       }
     })
     .catch((error) => res.status(500).json({ error }));
+};
+
+/* Fonction de notation */
+
+exports.addRating = (req, res, next) => {
+  if(req.body.rating < 0 || req.body.rating > 5) {
+    return res.status(400).json({ message: "La note doit être entre 0 et 5"});
+  }
+
+  const ratingObject = {
+    userId: req.body.userId,
+    grade: req.body.rating
+  };
+
+
+  Book.findOne({ _id: req.params.id})
+    .then(book => {
+      const userAlreadyRated = book.ratings.find(r => r.userId === req.auth.userId);
+      if(userAlreadyRated) {
+        return res.status(400).json({ message: "Livre déjà noté"});
+      }
+
+    // Ajouter la nouvelle note au tableau
+    book.ratings.push(ratingObject);
+
+    // Recalculer la moyenne (averageRating)
+
+    const totalRatings = book.ratings.length;
+    const sumRatings = book.ratings.reduce((sum, item) => sum + item.grade, 0);
+      book.averageRating = parseFloat((sumRatings / totalRatings).toFixed(1));
+
+    // Sauvegarder le livre mis à jour
+
+    return book.save()
+  
+   .then(updateBook => res.status(200).json(updateBook))
+   .catch(error => res.status(500).json({ error}));
+  })
+ };
+/* Fonction de modification */
+
+exports.modifyBook = (req, res, next) => {
+  res.status(200).json({ message: "Fonction modification en cours"});
 };
