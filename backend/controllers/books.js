@@ -83,10 +83,9 @@ exports.addRating = (req, res, next) => {
   }
 
   const ratingObject = {
-    userId: req.body.userId,
+    userId: req.auth.userId,
     grade: req.body.rating
   };
-
 
   Book.findOne({ _id: req.params.id})
     .then(book => {
@@ -109,11 +108,43 @@ exports.addRating = (req, res, next) => {
     return book.save()
   
    .then(updateBook => res.status(200).json(updateBook))
-   .catch(error => res.status(500).json({ error}));
+   .catch(error => res.status(500).json({ error }));
   })
  };
 /* Fonction de modification */
 
 exports.modifyBook = (req, res, next) => {
-  res.status(200).json({ message: "Fonction modification en cours"});
+  // On prépare l'objet qui va servir à la mise à jour
+
+  const bookObject = req.file ? {
+    ...JSON.parse(req.body.book),
+    imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+  } : { ...req.body };
+
+  // on supprime le _userId venant du front pour éviter que quelqu'un ne change le propriétaire
+  delete bookObject._userId;
+
+  // 2. On vérifie si c'est bien le propriétaire qui fait la modif
+  Book.findOne({_id: req.params.id})
+    .then((book) => {
+      if (book.userId != req.auth.userId) {
+        res.status(401).json({ message : 'Non-autorisé'});
+      } else {
+        // Si on change l'image, on supprime l'ancienne du serveur
+        if (req.file) {
+          const filename = book.imageUrl.split('/images/')[1];
+          fs.unlink(`images/${filename}`, (err) => {
+            if (err) console.log("Erreur lors de la suppression de l'ancienne image:", err);
+          });
+        }
+
+        // 3. On met à jour le livre
+        Book.updateOne({ _id: req.params.id}, { ...bookObject, _id: req.params.id})
+          .then(() => res.status(200).json({message : 'Livre modifié !'}))
+          .catch(error => res.status(401).json({ error }));
+      }
+    })
+    .catch((error) => {
+      res.status(400).json({ error });
+    });
 };
